@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net472</TargetFramework>
-    <LangVersion>7.3</LangVersion>         <!-- Enforces compatible C# version -->
+    <LangVersion>11.0</LangVersion>         <!-- Enforces compatible C# version -->
     <Nullable>disable</Nullable>           <!-- Disable nullability to avoid C# 8+ error -->
     <ImplicitUsings>disable</ImplicitUsings> <!-- Also disable implicit using for compatibility -->
   </PropertyGroup>

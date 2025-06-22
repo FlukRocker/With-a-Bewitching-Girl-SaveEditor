@@ -7,25 +7,57 @@ using System.Xml;
 
 class Program
 {
+    static readonly byte[] AesKey = Encoding.UTF8.GetBytes("4919871432539453");
+    static readonly byte[] AesIV = Encoding.UTF8.GetBytes("4919871432539453");
+
     static void Main(string[] args)
     {
         Console.OutputEncoding = Encoding.UTF8;
 
-        string inputPath = "saveData2.bytes";
-        string outputXml = "saveData2-edited.xml";
-        string outputBytes = "saveData2-edited.bytes";
+        Console.Write("Enter save slot number (e.g., 1, 2, 3...): ");
+        int slot;
+        if (!int.TryParse(Console.ReadLine(), out slot))
+        {
+            Console.WriteLine("❌ Invalid slot number.");
+            return;
+        }
 
-        byte[] key = Encoding.UTF8.GetBytes("4919871432539453");
-        byte[] iv = Encoding.UTF8.GetBytes("4919871432539453");
+        string inputPath = $"saveData{slot}.bytes";
+        string outputXml = $"saveData{slot}-edited.xml";
+        string outputBytes = $"saveData{slot}-edited.bytes";
 
-        byte[] encrypted = File.ReadAllBytes(inputPath);
-        string xml = DecryptAes(encrypted, key, iv);
+        if (!File.Exists(inputPath))
+        {
+            Console.WriteLine("❌ File not found: " + inputPath);
+            return;
+        }
 
-        XmlDocument doc = new XmlDocument();
-        doc.LoadXml(xml);
+        try
+        {
+            byte[] encrypted = File.ReadAllBytes(inputPath);
+            string xml = DecryptAes(encrypted, AesKey, AesIV);
 
-        // 🌟 Dictionary: XML key => Display label
-        var editableFields = new Dictionary<string, string>
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(xml);
+
+            RunEditor(doc);
+
+            File.WriteAllText(outputXml, doc.OuterXml, Encoding.UTF8);
+            byte[] newEncrypted = EncryptAes(Encoding.UTF8.GetBytes(doc.OuterXml), AesKey, AesIV);
+            File.WriteAllBytes(outputBytes, newEncrypted);
+
+            Console.WriteLine("\n✅ Saved edited XML to: " + outputXml);
+            Console.WriteLine("✅ Saved encrypted save to: " + outputBytes);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("❌ Error: " + ex.Message);
+        }
+    }
+
+    static void RunEditor(XmlDocument doc)
+    {
+        Dictionary<string, string> editableFields = new Dictionary<string, string>()
         {
             { "cafeCount", "Café Count" },
             { "cash", "Cash" },
@@ -34,21 +66,21 @@ class Program
             { "inran", "Lewdness (inran)" }
         };
 
-        var indexToKey = new Dictionary<int, string>();
+        Dictionary<int, string> indexToKey = new Dictionary<int, string>();
 
         while (true)
         {
             Console.Clear();
             Console.WriteLine("=== Save Editor Menu ===");
-            int index = 1;
 
-            foreach (var kv in editableFields)
+            int index = 1;
+            foreach (KeyValuePair<string, string> kv in editableFields)
             {
                 string xmlKey = kv.Key;
                 string label = kv.Value;
                 string value = GetXmlValue(doc, xmlKey);
 
-                Console.WriteLine($"[{index}] {label,-24} : {value}");
+                Console.WriteLine("[" + index + "] " + label.PadRight(24) + " : " + value);
                 indexToKey[index] = xmlKey;
                 index++;
             }
@@ -57,32 +89,27 @@ class Program
             Console.WriteLine("[Q] Quit Without Saving");
             Console.Write("\nSelect option: ");
 
-            string input = Console.ReadLine()?.Trim().ToLower();
+            string input = Console.ReadLine();
+            if (input == null) continue;
 
-            if (input == "s")
-            {
-                // Save updated XML
-                File.WriteAllText(outputXml, doc.OuterXml, Encoding.UTF8);
-                byte[] newEncrypted = EncryptAes(Encoding.UTF8.GetBytes(doc.OuterXml), key, iv);
-                File.WriteAllBytes(outputBytes, newEncrypted);
+            input = input.Trim().ToLower();
 
-                Console.WriteLine($"\n✅ Saved to: {outputBytes}");
-                break;
-            }
-            else if (input == "q")
+            if (input == "s") break;
+            if (input == "q")
             {
                 Console.WriteLine("❌ Exit without saving.");
-                break;
+                Environment.Exit(0);
             }
-            else if (int.TryParse(input, out int selected) && indexToKey.ContainsKey(selected))
+
+            int selected;
+            if (int.TryParse(input, out selected) && indexToKey.ContainsKey(selected))
             {
                 string xmlKey = indexToKey[selected];
                 string label = editableFields[xmlKey];
                 string oldVal = GetXmlValue(doc, xmlKey);
 
-                Console.Write($"Enter new value for {label} (current: {oldVal}): ");
-                string newVal = Console.ReadLine()?.Trim();
-
+                Console.Write("Enter new value for " + label + " (current: " + oldVal + "): ");
+                string newVal = Console.ReadLine();
                 if (!string.IsNullOrWhiteSpace(newVal))
                 {
                     SetXmlValue(doc, xmlKey, newVal);
@@ -96,7 +123,7 @@ class Program
             }
             else
             {
-                Console.WriteLine("❌ Invalid selection. Press any key...");
+                Console.WriteLine("❌ Invalid option. Press any key...");
                 Console.ReadKey();
             }
         }
@@ -104,30 +131,36 @@ class Program
 
     static string GetXmlValue(XmlDocument doc, string key)
     {
-        XmlNode node = doc.SelectSingleNode($"/plist/Dictionary/key[text()='{key}']/following-sibling::*[1]");
-        return node?.InnerText ?? "(not found)";
+        XmlNode node = doc.SelectSingleNode("/plist/Dictionary/key[text()='" + key + "']/following-sibling::*[1]");
+        return node != null ? node.InnerText : "(not found)";
     }
 
     static void SetXmlValue(XmlDocument doc, string key, string newValue)
     {
-        XmlNode node = doc.SelectSingleNode($"/plist/Dictionary/key[text()='{key}']/following-sibling::*[1]");
-        if (node != null)
-        {
-            node.InnerText = newValue;
-        }
+        XmlNode node = doc.SelectSingleNode("/plist/Dictionary/key[text()='" + key + "']/following-sibling::*[1]");
+        if (node != null) node.InnerText = newValue;
     }
 
     static string DecryptAes(byte[] data, byte[] key, byte[] iv)
     {
         using (Aes aes = Aes.Create())
         {
-            aes.KeySize = 128; aes.BlockSize = 128;
-            aes.Key = key; aes.IV = iv;
-            aes.Mode = CipherMode.CBC; aes.Padding = PaddingMode.PKCS7;
-            using (var decryptor = aes.CreateDecryptor())
+            aes.KeySize = 128;
+            aes.BlockSize = 128;
+            aes.Key = key;
+            aes.IV = iv;
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+
+            ICryptoTransform decryptor = aes.CreateDecryptor();
+            try
             {
                 byte[] result = decryptor.TransformFinalBlock(data, 0, data.Length);
                 return Encoding.UTF8.GetString(result);
+            }
+            finally
+            {
+                decryptor.Dispose();
             }
         }
     }
@@ -136,12 +169,21 @@ class Program
     {
         using (Aes aes = Aes.Create())
         {
-            aes.KeySize = 128; aes.BlockSize = 128;
-            aes.Key = key; aes.IV = iv;
-            aes.Mode = CipherMode.CBC; aes.Padding = PaddingMode.PKCS7;
-            using (var encryptor = aes.CreateEncryptor())
+            aes.KeySize = 128;
+            aes.BlockSize = 128;
+            aes.Key = key;
+            aes.IV = iv;
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+
+            ICryptoTransform encryptor = aes.CreateEncryptor();
+            try
             {
                 return encryptor.TransformFinalBlock(data, 0, data.Length);
+            }
+            finally
+            {
+                encryptor.Dispose();
             }
         }
     }
