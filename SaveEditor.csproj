@@ -8,4 +8,8 @@
     <ImplicitUsings>disable</ImplicitUsings> <!-- Also disable implicit using for compatibility -->
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Include=".github\FUNDING.yml" />
+  </ItemGroup>
+
 </Project>

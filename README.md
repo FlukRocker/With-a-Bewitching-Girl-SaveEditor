@@ -1,5 +1,8 @@
 ﻿# 🛠 Unity Save Editor for MasyouSyoujo
 
+[![Buy Me a Coffee](https://img.shields.io/badge/buy%20me%20a%20coffee-%E2%98%95-yellow?style=flat&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/frkisdabest)
+[![GitHub Stars](https://img.shields.io/github/stars/FlukRocker/With-a-Bewitching-Girl-SaveEditor?style=social)](https://github.com/FlukRocker/With-a-Bewitching-Girl-SaveEditor/stargazers)
+
 A simple and interactive save file editor for the Unity game **"With a Bewitching Girl (MasyouSyoujo)"**.  
 This tool allows you to **decrypt, view, and edit** key values such as affection level, cash, and work stats.
 
