@@ -8,11 +8,28 @@ This tool allows you to **decrypt, view, and edit** key values such as affection
 ## ✨ Features
 
 - ✅ Decrypt Unity save file (`saveDataX.bytes`)
-- ✅ Edit values with friendly names (e.g., `Affection`, `Lewdness`)
-- ✅ AES-128 CBC decryption with proper IV/key
-- ✅ Saves modified file as `.xml` (for inspection) and re-encrypts back to `.bytes`
-- ✅ Compatible with .NET Framework 4.7.2 and C# 7.3
-- ✅ Console-based interactive UI
+- ✅ Edit values with friendly labels (e.g., Affection, Lewdness)
+- ✅ AES-128 CBC decryption and encryption
+- ✅ View and modify fields interactively in the console
+- ✅ Save results as both XML and encrypted `.bytes` format
+- ✅ Compatible with C# 7.3+ and .NET Framework 4.7.2
+
+---
+
+## 🧰 Development Details
+
+- **.NET Framework:** 4.7.2  
+- **C# Language Version:** 11.0  
+- **IDE:** [Visual Studio 2022 Community Edition](https://visualstudio.microsoft.com/vs/community/)
+
+To ensure compatibility with modern C# features, your `.csproj` should include:
+
+```xml
+<PropertyGroup>
+  <TargetFramework>net472</TargetFramework>
+  <LangVersion>11.0</LangVersion>
+</PropertyGroup>
+```
 
 ---
 
